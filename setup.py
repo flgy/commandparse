@@ -16,7 +16,7 @@ setup(
 	keywords="CLI,command,argparse,parser",
 	url="https://github.com/flgy/commandparse",
 	license="MIT",
-	description="CLI application argument parser",
+	description="CLI application commands parser",
 	long_description=codecs.open("README.md", "rb", "utf8").read(),
 
 	classifiers=[
@@ -24,7 +24,8 @@ setup(
 		"Intended Audience :: Information Technology",
 		"License :: OSI Approved :: MIT License",
 		"Programming Language :: Python",
-		"Topic :: CLI",
+		"Topic :: Software Development :: Libraries",
+		"Topic :: Utilities",
 		"Operating System :: OS Independent",
 	],
 
