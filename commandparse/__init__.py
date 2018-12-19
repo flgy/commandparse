@@ -214,12 +214,13 @@ class Command():
 		else:
 			return None
 
-	def dispatch_command(self, commands, args):
+	def dispatch_command(self, commands_dict, command, args):
 		"""
 		Execute the corresponding command with provided args.
 
-		:command: dictionary containing subclass methods, hashed by command name (may be method suffix).
+		:commands: dictionary containing subclass methods, hashed by command name (may be method suffix).
+		:command: string containing the command
 		:args: result from ArgumentParser.parse_args()
 		"""
-		getattr(self, commands[args.command])(vars(args))
+		getattr(self, commands_dict[command])(vars(args))
 
