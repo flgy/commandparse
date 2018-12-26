@@ -69,8 +69,10 @@ class Command():
 		# means a positional argument (should have a value if it's a not required option).
 		value can take one argument: like `value` or multiple values with a list syntax: `['foo', 'bar']`.
 		"""
-		result = {}
 		lines = docstring.replace("\t", "").split("\n")
+		if lines == "":
+			return {}
+		result = {}
 		help_line = ""
 		arguments = {}
 
