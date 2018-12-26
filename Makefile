@@ -10,7 +10,7 @@ example:
 
 clean:
 	@find . -name "*.pyc" -delete
-	@rm -vrf build/ dist/
+	@rm -vrf build/ dist/ *.egg-info
 
 release: test
 	@python3 setup.py sdist

@@ -154,7 +154,11 @@ class Command():
 		:subparser: subparser object to add argument(s) to
 		"""
 		func = getattr(cls, method)
+
 		args_info = cls.__parse_docstring(func.__doc__)
+		if args_info == {}:
+			return
+
 		c = subparser.add_parser(command, help=args_info["help_line"])
 
 		if "arguments" in args_info:
