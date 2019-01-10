@@ -36,17 +36,9 @@ class Example(Command):
 if __name__ == "__main__":
 
 	parser = ArgumentParser()
-	sub = parser.add_subparsers(title="commands", dest="command", description="available commands")
-
-	commands = {}
-	for command, method in Example.get_commands(prefix="get_"):
-		Example.set_subparser_for(command, method, sub)
-		commands[command] = method
+	Example.add_subparsers(parser, prefixes=["get_"], title="commands", description="available commands")
 
 	args = parser.parse_args()
 
-	if args.command:
-		example = Example()
-		example.dispatch_command(commands, args)
-	else:
-		parser.print_usage()
+	example = Example()
+	example.dispatch_command(args)

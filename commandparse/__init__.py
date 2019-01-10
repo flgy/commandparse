@@ -32,12 +32,20 @@ else:
 from ast import literal_eval
 from inspect import getmembers
 from re import findall
+from uuid import uuid4
+
 
 class CommandTypeError(Exception):
 	pass
 
+
 class CommandDefaultValueError(Exception):
 	pass
+
+
+class CommandNotFoundError(Exception):
+	pass
+
 
 class Command():
 
@@ -48,11 +56,13 @@ class Command():
 		"bool": bool,
 		"list": list
 	}
+	COMMANDS = {}
+	COMMAND_VARNAME = ""
 
 	@staticmethod
 	def __parse_docstring(docstring):
 		"""
-		Parse a docstring to extract help and argument to generate a subparsers with arguments.
+		Parses a docstring to extract help and argument to generate a subparsers with arguments.
 		The expected format is (triple quotes are replaced by { and }):
 
 			{{{
@@ -132,7 +142,20 @@ class Command():
 		return {"help_line": help_line.strip(), "arguments": arguments}
 
 	@classmethod
-	def get_commands(cls, prefix=""):
+	def add_subparsers(cls, parser, prefixes, delim="_", title="commands", description="available commands"):
+		"""
+		"""
+		cls.COMMANDS = {}
+		cls.COMMAND_VARNAME = "command_{rnd}".format(rnd=uuid4().hex[:10])
+
+		sub = parser.add_subparsers(title=title, dest=cls.COMMAND_VARNAME, description=description)
+		for pf in prefixes:
+			for command, method in cls.get_commands(prefix=pf, delim=delim):
+				cls.set_subparser_for(command, method, sub)
+				cls.COMMANDS[command] = method
+
+	@classmethod
+	def get_commands(cls, prefix="", delim="_"):
 		"""
 		Iterator yielding object methods with
 
@@ -141,13 +164,13 @@ class Command():
 		parent_members = [k for k, v in getmembers(Command)]
 		for method, func in getmembers(cls):
 			if callable(func) and method not in parent_members and method.startswith(prefix):
-					command = findall("{}_?(.*)".format(prefix), method)[0]
+					command = findall("{pf}{delim}?(.*)".format(pf=prefix, delim=delim), method)[0]
 					yield (command, method)
 
 	@classmethod
 	def set_subparser_for(cls, command, method, subparser):
 		"""
-		Take a subparser as argument and add arguments corresponding to command in it.
+		Takes a subparser as argument and add arguments corresponding to command in it.
 
 		:command: name to display in the help
 		:method: function name corresponding to the command
@@ -189,11 +212,12 @@ class Command():
 						else:
 							c.add_argument(label, type=arg["type"], choices=arg["values"], default=arg["values"][0], nargs="?", help=arg["help_line"])
 					else:
+						print(arg)
 						c.add_argument(arg["alias"], arg["name"], type=arg["type"], help=arg["help_line"])
 
 	def has_option(self, method, option):
 		"""
-		Return `true` if a given method has a certain option.
+		Returns `true` if a given method has a certain option.
 
 		:method: method name to search for the option
 		:option: the option to search in the method
@@ -207,7 +231,7 @@ class Command():
 
 	def retrieve_default_val_for_arg(self, method, argname):
 		"""
-		Return the default value(s) of a certain argument/option of a given method.
+		Returns the default value(s) of a certain argument/option of a given method.
 
 		:method: method name to retrieve argument value(s)
 		:argname: argument to return default value(s)
@@ -220,13 +244,20 @@ class Command():
 		else:
 			return None
 
-	def dispatch_command(self, commands_dict, command, args):
+	def dispatch_command(self, args):
 		"""
-		Execute the corresponding command with provided args.
+		Executes the corresponding command with provided args.
+		Returns None if no command is provided otherwise forwards the command return.
+		Raises CommandNotFoundError if the command is not registered, should not happen.
 
-		:commands: dictionary containing subclass methods, hashed by command name (may be method suffix).
-		:command: string containing the command
 		:args: result from ArgumentParser.parse_args()
 		"""
-		getattr(self, commands_dict[command])(vars(args))
+		arguments = vars(args)
+		if self.COMMAND_VARNAME not in arguments or arguments.get(self.COMMAND_VARNAME) is None:
+			return None
 
+		cmd = arguments.get(self.COMMAND_VARNAME)
+		if cmd not in self.COMMANDS:
+			raise CommandNotFoundError("{cmd} not registered".format(cmd=cmd))
+
+		return getattr(self, self.COMMANDS[cmd])(vars(args))
