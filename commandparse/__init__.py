@@ -212,7 +212,6 @@ class Command():
 						else:
 							c.add_argument(label, type=arg["type"], choices=arg["values"], default=arg["values"][0], nargs="?", help=arg["help_line"])
 					else:
-						print(arg)
 						c.add_argument(arg["alias"], arg["name"], type=arg["type"], help=arg["help_line"])
 
 	def has_option(self, method, option):
