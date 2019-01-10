@@ -12,21 +12,9 @@ Usage:
 
 parser = ArgumentParser(...)
 [...]
-sub = parser.add_subparsers(title="commands", dest="command", description="available commands")
-
-# Registering commands
-commands = {}
-for command, method in Subclass.get_commands(prefix="prefix_"):
-	Subclass.set_subparser_for(command, method, sub)
-	commands[command] = method
-[...]
-args = parser.parse_args()
-
-if args.command:
-	cmd = Subclass(...)
-	cmd.dispatch_command(commands, args)
-else:
-	parser.print_usage()
+cmd.add_subparsers(parser, prefixes=["get_", ...], delim="_", title="commands", description="available commands")
+cmd = Subclass(...)
+cmd.dispatch_command(commands, args)
 """
 
 from ast import literal_eval
