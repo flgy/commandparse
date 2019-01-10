@@ -6,9 +6,9 @@ Module to parse command based CLI application.
 Usage:
 	* Subclass the Command class
 	* Add a method with a name such as `prefix_commandname` with kwargs as required argument
-	* Create a an ArgumentParser and declare a subparser per command
-	* Register the commands in a dictionary
-	* Use the dispatch_command function with the commands and args returned by `parser.parse_args()`
+	* Create an ArgumentParser instance
+	* Call the `Subclass.add_suparsers` with the ArgumentParser instance and other settings
+	* Use the `dispatch_command` function with the args returned by `parser.parse_args()`
 
 parser = ArgumentParser(...)
 [...]
