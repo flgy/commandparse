@@ -209,6 +209,19 @@ class SampleCommand(Command):
 		assert "alist" in kwargs
 		assert (isinstance(kwargs["alist"], list) and len(kwargs["alist"]) == 2) or kwargs["alist"] is None
 
+	def multiple_opts_with_same_prefix(self, kwargs):
+		"""
+		Test method that do something.
+		Arguments:
+			@verbose:bool
+				The method will perform something and be verbose about it
+			@value:int = 2
+				The method will perform something with `value` if given
+		"""
+		assert "verbose" in kwargs
+		assert "value" in kwargs
+		assert isinstance(kwargs["verbose"], bool) and isinstance(kwargs["value"], int)
+
 class TestCommand():
 
 	def test_bool_option_set(self):
@@ -474,3 +487,11 @@ class TestCommand():
 		assert cmd.retrieve_default_val_for_arg("pos_list", "alist") is None
 		assert cmd.retrieve_default_val_for_arg("pos_list_values", "alist") == ["foo", "bar", "qux"]
 
+	def test_multiple_opts_with_same_prefix(self):
+		parser = ArgumentParser()
+		sub = parser.add_subparsers()
+
+		SampleCommand.set_subparser_for("multiple_opts_with_same_prefix", "multiple_opts_with_same_prefix", sub)
+		args = parser.parse_known_args(["multiple_opts_with_same_prefix", "-v", "--value", "2"])[0]
+		cmd = SampleCommand()
+		cmd.multiple_opts_with_same_prefix(vars(args))

@@ -21,6 +21,7 @@ from ast import literal_eval
 from inspect import getmembers
 from re import findall
 from uuid import uuid4
+from argparse import ArgumentError
 
 
 class CommandTypeError(Exception):
@@ -120,8 +121,8 @@ class Command():
 							arguments[name]["pos"] = True
 						elif opt == "@":
 							arguments[name]["pos"] = False
-
-					elif line:  # if no prefix is found, read the help line of the previous argument.
+					# if no prefix is found, read the help line of the previous argument.
+					elif line:  
 						if not arguments[name]["help_line"]:
 							arguments[name]["help_line"] = line
 						else:
@@ -164,6 +165,46 @@ class Command():
 		:method: function name corresponding to the command
 		:subparser: subparser object to add argument(s) to
 		"""
+
+		def add_pos_argument(sub, label, arg):
+			if arg["type"] == bool:
+				raise CommandTypeError("bool type not supported as positional argument")
+			if "value" in arg:
+				if arg["type"] in [str, int, float]:
+					sub.add_argument(label, nargs='?', default=arg["value"], type=arg["type"], help=arg["help_line"])
+			elif "values" in arg:
+				if arg["type"] in [str, int, float]:
+					sub.add_argument(label, nargs='?', default=arg["values"][0], choices=arg["values"], type=arg["type"], help=arg["help_line"])
+				elif arg["type"] == list:
+					sub.add_argument(label, nargs='+', default=arg["values"][0], choices=arg["values"], help=arg["help_line"])
+			else:
+				sub.add_argument(label, type=arg["type"], help=arg["help_line"])
+
+		def add_opt_argument(sub, label, arg, add_alias=True):
+			if arg["type"] == bool:
+				if add_alias:
+					sub.add_argument(arg["alias"], arg["name"], action="store_true", default=False, help=arg["help_line"])
+				else:
+					sub.add_argument(arg["name"], action="store_true", default=False, help=arg["help_line"])
+					
+			elif arg["type"] in [str, int, float] and "value" in arg:
+				if add_alias:
+					sub.add_argument(arg["alias"], arg["name"], type=arg["type"], default=arg["value"], help=arg["help_line"])
+				else:
+					sub.add_argument(arg["name"], type=arg["type"], default=arg["value"], help=arg["help_line"])
+			elif arg["type"] == list and "values" not in arg:
+				sub.add_argument(label, nargs="*", help=arg["help_line"])
+			elif "values" in arg:
+				if arg["type"] == list:
+					sub.add_argument(label, choices=arg["values"], default=arg["values"][0], nargs="*", help=arg["help_line"])
+				else:
+					sub.add_argument(label, type=arg["type"], choices=arg["values"], default=arg["values"][0], nargs="?", help=arg["help_line"])
+			else:
+				if add_alias:
+					sub.add_argument(arg["alias"], arg["name"], type=arg["type"], help=arg["help_line"])
+				else:
+					sub.add_argument(arg["name"], type=arg["type"], help=arg["help_line"])
+		
 		func = getattr(cls, method)
 
 		args_info = cls.__parse_docstring(func.__doc__)
@@ -175,32 +216,13 @@ class Command():
 		if "arguments" in args_info:
 			for label, arg in args_info["arguments"].items():
 				if arg["pos"]:
-					if arg["type"] == bool:
-						raise CommandTypeError("bool type not supported as positional argument")
-					if "value" in arg:
-						if arg["type"] in [str, int, float]:
-							c.add_argument(label, nargs='?', default=arg["value"], type=arg["type"], help=arg["help_line"])
-					elif "values" in arg:
-						if arg["type"] in [str, int, float]:
-							c.add_argument(label, nargs='?', default=arg["values"][0], choices=arg["values"], type=arg["type"], help=arg["help_line"])
-						elif arg["type"] == list:
-							c.add_argument(label, nargs='+', default=arg["values"][0], choices=arg["values"], help=arg["help_line"])
-					else:
-						c.add_argument(label, type=arg["type"], help=arg["help_line"])
+					add_pos_argument(c, label, arg)
 				else:
-					if arg["type"] == bool:
-						c.add_argument(arg["alias"], arg["name"], action="store_true", default=False, help=arg["help_line"])
-					elif arg["type"] in [str, int, float] and "value" in arg:
-						c.add_argument(arg["alias"], arg["name"], type=arg["type"], default=arg["value"], help=arg["help_line"])
-					elif arg["type"] == list and "values" not in arg:
-						c.add_argument(label, nargs="*", help=arg["help_line"])
-					elif "values" in arg:
-						if arg["type"] == list:
-							c.add_argument(label, choices=arg["values"], default=arg["values"][0], nargs="*", help=arg["help_line"])
-						else:
-							c.add_argument(label, type=arg["type"], choices=arg["values"], default=arg["values"][0], nargs="?", help=arg["help_line"])
-					else:
-						c.add_argument(arg["alias"], arg["name"], type=arg["type"], help=arg["help_line"])
+					try:
+						add_opt_argument(c, label, arg, add_alias=True)
+					except ArgumentError as e:
+						add_opt_argument(c, label, arg, add_alias=False)
+	
 
 	def has_option(self, method, option):
 		"""
