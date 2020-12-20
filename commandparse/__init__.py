@@ -46,7 +46,6 @@ class Command():
 		"list": list
 	}
 	COMMANDS = {}
-	COMMAND_VARNAME = ""
 
 	@staticmethod
 	def __parse_docstring(docstring):
@@ -121,8 +120,8 @@ class Command():
 							arguments[name]["pos"] = True
 						elif opt == "@":
 							arguments[name]["pos"] = False
-					# if no prefix is found, read the help line of the previous argument.
-					elif line:  
+
+					elif line:  # if no prefix is found, read the help line of the previous argument.
 						if not arguments[name]["help_line"]:
 							arguments[name]["help_line"] = line
 						else:
@@ -133,15 +132,23 @@ class Command():
 	@classmethod
 	def add_subparsers(cls, parser, prefixes, delim="_", title="commands", description="available commands"):
 		"""
+		Parse the calling classes and extract commands, for each command register a subparser.
+	
+		:cls: class to register subparsers
+		:parser: add the subparsers to the provided parser
+		:prefixes: str list of prefixes corresponding to command methods
+		:delim: str delimiter to separate prefix from commnad name
+		:title: title of the subparser
+		:description: description of the subparser
 		"""
-		cls.COMMANDS = {}
-		cls.COMMAND_VARNAME = "command_{rnd}".format(rnd=uuid4().hex[:10])
-
-		sub = parser.add_subparsers(title=title, dest=cls.COMMAND_VARNAME, description=description)
+		command = "command_{rnd}".format(rnd=uuid4().hex[:10])
+		cls.COMMANDS[command] = {}
+		
+		sub = parser.add_subparsers(title=title, dest=command, description=description)
 		for pf in prefixes:
-			for command, method in cls.get_commands(prefix=pf, delim=delim):
-				cls.set_subparser_for(command, method, sub)
-				cls.COMMANDS[command] = method
+			for c, method in cls.get_commands(prefix=pf, delim=delim):
+				cls.set_subparser_for(c, method, sub)
+				cls.COMMANDS[command][c] = method
 
 	@classmethod
 	def get_commands(cls, prefix="", delim="_"):
@@ -186,7 +193,7 @@ class Command():
 					sub.add_argument(arg["alias"], arg["name"], action="store_true", default=False, help=arg["help_line"])
 				else:
 					sub.add_argument(arg["name"], action="store_true", default=False, help=arg["help_line"])
-					
+
 			elif arg["type"] in [str, int, float] and "value" in arg:
 				if add_alias:
 					sub.add_argument(arg["alias"], arg["name"], type=arg["type"], default=arg["value"], help=arg["help_line"])
@@ -222,7 +229,6 @@ class Command():
 						add_opt_argument(c, label, arg, add_alias=True)
 					except ArgumentError as e:
 						add_opt_argument(c, label, arg, add_alias=False)
-	
 
 	def has_option(self, method, option):
 		"""
@@ -262,11 +268,15 @@ class Command():
 		:args: result from ArgumentParser.parse_args()
 		"""
 		arguments = vars(args)
-		if self.COMMAND_VARNAME not in arguments or arguments.get(self.COMMAND_VARNAME) is None:
+		for c in self.COMMANDS.keys():
+			cmd = arguments.get(c, False)
+			idx = c
+			if cmd:
+				break
+		else:
 			return None
 
-		cmd = arguments.get(self.COMMAND_VARNAME)
-		if cmd not in self.COMMANDS:
+		if cmd not in self.COMMANDS[idx]:
 			raise CommandNotFoundError("{cmd} not registered".format(cmd=cmd))
 
-		return getattr(self, self.COMMANDS[cmd])(vars(args))
+		return getattr(self, self.COMMANDS[idx][cmd])(vars(args))
