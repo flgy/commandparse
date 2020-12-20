@@ -18,6 +18,7 @@ setup(
 	license="MIT",
 	description="CLI application commands parser",
 	long_description=codecs.open("README.md", "rb", "utf8").read(),
+	long_description_content_type="text/markdown",
 
 	classifiers=[
 		"Development Status :: 4 - Beta",
