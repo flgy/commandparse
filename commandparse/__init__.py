@@ -36,6 +36,9 @@ class CommandNotFoundError(Exception):
 	pass
 
 
+class CommandParserNameDuplicated(Exception):
+	pass
+
 class Command():
 
 	TYPES = {
@@ -130,7 +133,7 @@ class Command():
 		return {"help_line": help_line.strip(), "arguments": arguments}
 
 	@classmethod
-	def add_subparsers(cls, parser, prefixes, delim="_", title="commands", description="available commands"):
+	def add_subparsers(cls, parser, name="", prefixes=[], delim="_", title="commands", description="available commands"):
 		"""
 		Parse the calling classes and extract commands, for each command register a subparser.
 	
@@ -141,7 +144,10 @@ class Command():
 		:title: title of the subparser
 		:description: description of the subparser
 		"""
-		command = "command_{rnd}".format(rnd=uuid4().hex[:10])
+		command = f"command_{name}"
+		if command in cls.COMMANDS:
+			raise CommandParserNameDuplicated(f"Command parser with name {name} already registered.")
+		
 		cls.COMMANDS[command] = {}
 		
 		sub = parser.add_subparsers(title=title, dest=command, description=description)
