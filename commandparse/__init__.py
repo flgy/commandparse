@@ -145,6 +145,7 @@ class Command():
 		cls.COMMANDS[command] = {}
 		
 		sub = parser.add_subparsers(title=title, dest=command, description=description)
+		sub.required = True
 		for pf in prefixes:
 			for c, method in cls.get_commands(prefix=pf, delim=delim):
 				cls.set_subparser_for(c, method, sub)
