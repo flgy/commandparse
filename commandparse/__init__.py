@@ -133,7 +133,7 @@ class Command():
 		return {"help_line": help_line.strip(), "arguments": arguments}
 
 	@classmethod
-	def add_subparsers(cls, parser, name="", prefixes=[], delim="_", title="commands", description="available commands"):
+	def add_subparsers(cls, parser, name="", prefixes=[], delim="_", title="commands", description="available commands", required=True):
 		"""
 		Parse the calling classes and extract commands, for each command register a subparser.
 	
@@ -274,7 +274,7 @@ class Command():
 
 		:args: result from ArgumentParser.parse_args()
 		"""
-		arguments = vars(args)
+		arguments = {k: v for k, v in vars(args).items() if v is not None}
 		for c in self.COMMANDS.keys():
 			cmd = arguments.get(c, False)
 			idx = c
@@ -286,4 +286,4 @@ class Command():
 		if cmd not in self.COMMANDS[idx]:
 			raise CommandNotFoundError("{cmd} not registered".format(cmd=cmd))
 
-		return getattr(self, self.COMMANDS[idx][cmd])(vars(args))
+		return getattr(self, self.COMMANDS[idx][cmd])(arguments)
